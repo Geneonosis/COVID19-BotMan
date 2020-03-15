@@ -1,0 +1,14 @@
+{
+    "name": "CovidBotMan",
+    "version": "1.0.0",
+    "description": "COVID-19 discord bot!",
+    "main": "bot.js",
+    "author": "Geneonosis#6492",
+    "dependencies": {
+        "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
+        "node-fetch": "^2.6.0",
+        "request": "^2.88.2",
+        "winston": "^3.2.1",
+        "xmlhttprequest": "^1.8.0"
+    }
+}
