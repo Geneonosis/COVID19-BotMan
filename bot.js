@@ -40,7 +40,7 @@ bot.on('message', function (user, userID, channelID, message, evt){
             case 'covid-help':
                 bot.sendMessage({
                     to: channelID,
-                    message: 'Hello! I am **COVID-BotMan!** A discord bot made by Geneonosis that will monitor the outside world for you and report information on the **COVID-19** Pandemic!\n**Commands:** \n`!covid-help` :: displays this help menu \n`!covid-report` :: gives a report on the status of the virus \n`!covid-news` :: provides the latest headlines and news on the outbreak \n \n Stay safe! <3'
+                    message: 'Hello! I am **COVID-BotMan!** A discord bot made by Geneonosis that will monitor the outside world for you and report information on the **COVID-19** Pandemic!\n**Commands:** \n`!covid-help` :: displays this help menu \n`!covid-report` :: gives a report on the status of the virus \n`!covid-news` :: provides the latest headlines and news on the outbreak\n`!covid-repo` :: learn more about my code! \n \n Stay safe! <3'
                 });
                 break;
             case 'covid-report':
@@ -48,8 +48,12 @@ bot.on('message', function (user, userID, channelID, message, evt){
                 break;
             case 'covid-news':
                 covidNews(bot);
-
                 break;
+            case 'covid-repo':
+                bot.sendMessage({
+                    to:channelID,
+                    message: 'Learn more about me! here\'s a link to my code!\n https://github.com/Geneonosis/COVID19-BotMan'
+                })
             default:
                 break;
             //Just add any case commands if you want to ...
