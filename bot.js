@@ -122,10 +122,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                     }
 
                     Object.values(data)[0].sort((countryA, countryB) => {
-                        if (countryA["cases"] >= countryB["cases"])
-                            return 1;
-                        else
-                            return -1;
+                        return countryB["cases"] - countryA["cases"];
                     })
 
                     for (var i = 0; i < 10; i = i + 1) {
