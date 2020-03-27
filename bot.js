@@ -122,7 +122,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                     }
 
                     Object.values(data)[0].sort((countryA, countryB) => {
-                        return countryB["cases"] - countryA["cases"];
+                        return parseInt(countryB["cases"].replace(",","")) - parseInt(countryA["cases"].replace(",",""));
                     })
 
                     for (var i = 0; i < 10; i = i + 1) {
