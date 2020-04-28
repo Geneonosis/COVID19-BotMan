@@ -3,12 +3,14 @@ var Discord = require('discord.io');
 var Request = require('request');
 var logger = require('winston');
 var auth = require('./auth.json');
+var botInfo = require('./package.json');
 var util = require('util');
 var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
+var covidAPI = require('covid19-api');
 
 const url = 'https://coronavirus-monitor.p.rapidapi.com/coronavirus/cases_by_country.php';
 const APIKey = "b7738beb69msh75347bc8e4a3c83p1ac40ejsncdce7856c215";
-
+const map = 'https://www.arcgis.com/apps/opsdashboard/index.html#/bda7594740fd40299423467b48e9ecf6';
 
 //CONFIGURE logger settings
 logger.remove(logger.transports.Console);
@@ -28,6 +30,16 @@ bot.on('ready', function (evt) {
     logger.info(bot.username + ' - (' + bot.id + ')');
 });
 
+helperMessage = 'Hello! I am **COVID-BotMan!** Version: ' + botInfo.version + ' A Discord bot made by Geneonosis that will monitor the outside world for you and report information on the **COVID-19** Pandemic!\n' 
+              + 'Type any of the following commands into the server that I am apart of and you will be presented with statistics and information on the coronavirus!\n ' 
+              + '**Commands:** \n`!covid-help` :: displays this help menu \n' 
+              + '`!covid-report` :: sends you a coronavirs report to the server \n'
+              + '`!covid-report-dm` :: sends a report directly to you DMs instead of to the server \n'
+              + '`!covid-news` :: provides your dms with the latest headlines and news on the outbreak\n'
+              + '`!covid-repo` :: learn more about my code! \n '
+              + '`!covid-map`  :: link to map - work in progress \n\n Stay safe! <3'
+                 
+
 bot.on('message', function (user, userID, channelID, message, evt) {
     //Our bot needs to know if it will execute a command
     //It will listen for messages that will start with '!'
@@ -39,16 +51,25 @@ bot.on('message', function (user, userID, channelID, message, evt) {
         switch (cmd) {
             case 'covid-help':
                 bot.sendMessage({
-                    to: channelID,
-                    message: 'Hello! I am **COVID-BotMan!** A discord bot made by Geneonosis that will monitor the outside world for you and report information on the **COVID-19** Pandemic!\n**Commands:** \n`!covid-help` :: displays this help menu \n`!covid-report` :: gives a report on the status of the virus \n`!covid-news` :: provides the latest headlines and news on the outbreak\n`!covid-repo` :: learn more about my code! \n \n Stay safe! <3'
+                    to: userID,
+                    message: helperMessage
                 });
                 break;
+            case 'covid-report-dm':
+                covidReport(bot,userID);
+                break;
             case 'covid-report':
-                covidReport(bot);
+		        covidReport(bot,channelID);
                 break;
             case 'covid-news':
                 covidNews(bot);
                 break;
+            case 'covid-map':
+                bot.sendMessage({
+                    to: userID,
+                    message: map
+                })
+		break;
             case 'covid-repo':
                 bot.sendMessage({
                     to: channelID,
@@ -78,7 +99,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                     var link = Object.values(data)[2][0]["url"];
                     var string = header + title + link + '\n' + "powered by NewsAPI";
                     bot.sendMessage({
-                        to: channelID,
+                        to: userID,
                         message: string
                     });
                 } catch (err) {
@@ -88,16 +109,13 @@ bot.on('message', function (user, userID, channelID, message, evt) {
         }
     }
 
-    //function to control the covid report switch case
-    function covidReport(bot) {
-        var casesCount = 0;
-        var deathsCount = 0;
-        var recoveryCount = 0;
-        var countriesCount = 0;
+    function covidReport(bot,sendhere) {
+
         var jsonText = '';
         const Http = new XMLHttpRequest();
-        Http.open("GET", url);
-        Http.setRequestHeader("X-RapidAPI-Key", APIKey)
+
+        Http.open("GET", "https://covid19api.io/api/v1/AllReports");
+
         Http.send();
         Http.onreadystatechange = function () {
             jsonText = Http.responseText;
@@ -108,74 +126,61 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                     var header = 'Below is a list of the top 10 countries with the COVID-19 as of: ' +
                         dateObj.toString() +
                         '\n' +
-                        '```Country:                 Cases:  Deaths: Recovered:\n' +
+                        '```Country:      Cases:    Deaths: Recovered:\n' +
                         '------------------------------------------------\n';
-                    //for(var i = 0; i < Object.values(data)[0][0].length
-                    console.log(Object.values(data)[0].length);
-                    var string = header;
-                    for (var i = 0; i < Object.values(data)[0].length; i = i + 1) {
-                        var dict = Object.values(data)[0][i];
-                        countriesCount = Object.values(data)[0].length;
-                        casesCount += parseInt(dict["cases"].replace(",", ""));
-                        deathsCount += parseInt(dict["deaths"].replace(",", ""));
-                        recoveryCount += parseInt(dict["total_recovered"].replace(",", ""));
-                    }
 
-                    Object.values(data)[0].sort((countryA, countryB) => {
-                        return parseInt(countryB["cases"].replace(",","")) - parseInt(countryA["cases"].replace(",",""));
+                    var newData = data.reports;
+                    cases = newData[0]["table"][0].sort((countryA, countryB) => {
+                        return parseInt(countryB["TotalCases"].replace(/,/g,"")) - parseInt(countryA["TotalCases"].replace(/,/g,""));
                     })
 
-                    for (var i = 0; i < 10; i = i + 1) {
-                        var dict = Object.values(data)[0][i]
-                        var country = dict["country_name"];
-                        var cases = dict["cases"];
-                        var deaths = dict["deaths"];
-                        var recovered = dict["total_recovered"];
-                        while (country.length < 20) {
-                            country += ' ';
+                    totalCases = newData[0]["cases"]
+                    totalDeaths = newData[0]["deaths"]
+                    totalRecoveries = newData[0]["recovered"]
+
+                    var totals = "total cases: " + totalCases + "\ndeaths: " + totalDeaths + "\nrecovered: " + totalRecoveries + "\n";
+
+                    string = ""
+                    string += header
+                    for(var i = 1; i < 12; i = i + 1){
+
+                        //INDEX
+                        c_index = ""
+                        c_index += i-1 + "."
+                        while (c_index.length < 4){
+                            c_index += ' ';
                         }
-                        while (cases.length < 7) {
-                            cases += ' ';
+
+                        //COUNTRY
+                        c_country = cases[i]["Country"];
+                        while (c_country.length < 10){
+                            c_country += ' ';
                         }
-                        while (deaths.length < 7) {
-                            deaths += ' ';
+
+                        //CASES
+                        c_cases = cases[i]["TotalCases"];
+                        while (c_cases.length < 10) {
+                            c_cases += ' ';
                         }
-                        while (recovered.length < 7) {
-                            recovered += ' ';
+
+                        //DEATHS
+                        c_deaths = cases[i]["TotalDeaths"];
+                        while(c_deaths.length < 8) {
+                            c_deaths += ' ';
                         }
-                        indexString = (i + 1).toString();
-                        indexString += '.';
-                        while (indexString.length < 3) {
-                            indexString += ' ';
+
+                        //RECOVERED
+                        c_recoveries = cases[i]["TotalRecovered"];
+                        while(c_recoveries.length < 8) {
+                            c_recoveries += ' ';
                         }
-                        var row = util.format("%s %s %s %s %s\n", indexString, country, cases, deaths, recovered);
-                        string += row;
+                        string += c_index + c_country + c_cases + c_deaths + c_recoveries + "\n";
                     }
-                    stringCCount = countriesCount.toString();
-                    stringCaCount = casesCount.toString();
-                    stringDCount = deathsCount.toString();
-                    stringRCount = recoveryCount.toString();
-                    while (stringCCount.length < 20) {
-                        stringCCount += ' ';
-                    }
-                    while (stringCaCount.length < 7) {
-                        stringCaCount += ' ';
-                    }
-                    while (stringDCount.length < 7) {
-                        stringDCount += ' ';
-                    }
-                    while (stringRCount.length < 7) {
-                        stringRCount += ' ';
-                    }
-                    var totalCounts = util.format("%s %s %s %s\n", stringCCount, stringCaCount, stringDCount, stringRCount)
-                    footer = '------------------------------------------------\n' +
-                        'TOTALS\n' +
-                        'Countries:           Cases:  Deaths: Recovered:\n' +
-                        totalCounts +
-                        '------------------------------------------------\n```';
-                    string += footer;
+
+
+                    string += "```"
                     bot.sendMessage({
-                        to: channelID,
+                        to: sendhere,
                         message: string
                     });
                 } catch (err) {
