@@ -1,15 +1,15 @@
+/************************************************************************
+* Author: Jonathan Tigner
+* Date: 4/28/2020
+************************************************************************/
 const fetch = require("node-fetch");
 var Discord = require('discord.io');
-var Request = require('request');
 var logger = require('winston');
 var auth = require('./auth.json');
 var botInfo = require('./package.json');
-var util = require('util');
 var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
 var covidAPI = require('covid19-api');
 
-const url = 'https://coronavirus-monitor.p.rapidapi.com/coronavirus/cases_by_country.php';
-const APIKey = "b7738beb69msh75347bc8e4a3c83p1ac40ejsncdce7856c215";
 const map = 'https://www.arcgis.com/apps/opsdashboard/index.html#/bda7594740fd40299423467b48e9ecf6';
 
 //CONFIGURE logger settings
@@ -86,7 +86,6 @@ bot.on('message', function (user, userID, channelID, message, evt) {
         const Http = new XMLHttpRequest();
         var jsonText = "";
         Http.open("GET", "http://newsapi.org/v2/top-headlines?country=us&q=coronavirus&apiKey=0ab861f5771141e890b50e91989f72db");
-        //Http.setRequestHeader("X-RapidAPI-Key",APIKey)
         Http.send();
         Http.onreadystatechange = function () {
             jsonText = Http.responseText;
@@ -133,12 +132,6 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                     cases = newData[0]["table"][0].sort((countryA, countryB) => {
                         return parseInt(countryB["TotalCases"].replace(/,/g,"")) - parseInt(countryA["TotalCases"].replace(/,/g,""));
                     })
-
-                    totalCases = newData[0]["cases"]
-                    totalDeaths = newData[0]["deaths"]
-                    totalRecoveries = newData[0]["recovered"]
-
-                    var totals = "total cases: " + totalCases + "\ndeaths: " + totalDeaths + "\nrecovered: " + totalRecoveries + "\n";
 
                     string = ""
                     string += header
